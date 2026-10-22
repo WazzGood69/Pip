@@ -58,6 +58,74 @@ const grid=new THREE.GridHelper(75,75,0x66539b,0x382d60);grid.position.y=-.045;s
 const stage=new THREE.Mesh(new THREE.CylinderGeometry(4.7,5,0.45,48),new THREE.MeshStandardMaterial({color:0x7040a7,metalness:.2,roughness:.55}));stage.position.y=.12;stage.castShadow=true;stage.receiveShadow=true;scene.add(stage);
 const rim=new THREE.Mesh(new THREE.TorusGeometry(4.55,.09,8,64),new THREE.MeshStandardMaterial({color:0xffd86b,metalness:.65,roughness:.25,emissive:0x4b2500}));rim.rotation.x=Math.PI/2;rim.position.y=.36;scene.add(rim);
 for(let i=0;i<16;i++){const a=i*Math.PI*2/16;const bulb=new THREE.Mesh(new THREE.SphereGeometry(.105,10,8),new THREE.MeshStandardMaterial({color:i%2?0x55e8ff:0xffd86b,emissive:i%2?0x126b91:0x815000,emissiveIntensity:1.5}));bulb.position.set(Math.cos(a)*4.55,.42,Math.sin(a)*4.55);scene.add(bulb)}
+
+// THE WONDER WORLD: scenery surrounding the ringmaster's stage.
+const worldMats = {
+  pink:new THREE.MeshStandardMaterial({color:0xff4d9d,roughness:.55}),
+  cyan:new THREE.MeshStandardMaterial({color:0x55e8ff,roughness:.45,metalness:.12}),
+  lemon:new THREE.MeshStandardMaterial({color:0xffdf68,roughness:.5}),
+  lilac:new THREE.MeshStandardMaterial({color:0x9b73ff,roughness:.65}),
+  mint:new THREE.MeshStandardMaterial({color:0x58e6b2,roughness:.7}),
+  coral:new THREE.MeshStandardMaterial({color:0xff795d,roughness:.6}),
+  deep:new THREE.MeshStandardMaterial({color:0x251344,roughness:.85}),
+  cloud:new THREE.MeshStandardMaterial({color:0xfff5ff,roughness:1})
+};
+function worldMesh(geo,mat,pos,scale,rot){
+  const m=new THREE.Mesh(geo,mat);m.position.set(pos[0],pos[1],pos[2]);
+  if(scale)m.scale.set(scale[0],scale[1],scale[2]);
+  if(rot)m.rotation.set(rot[0],rot[1],rot[2]);
+  m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
+}
+// Giant floating carnival hoops at the horizon.
+const worldAnim=[];
+for(let i=0;i<7;i++){
+  const a=i*Math.PI*2/7,dist=17+Math.random()*5,x=Math.cos(a)*dist,z=Math.sin(a)*dist;
+  const hoop=worldMesh(new THREE.TorusGeometry(2.2+Math.random()*1.2,.12,12,64),
+    [worldMats.pink,worldMats.cyan,worldMats.lemon,worldMats.lilac][i%4],
+    [x,3.4+Math.random()*4,z],[1,1,1],[Math.random()*.5,0,Math.random()*.35]);
+  worldAnim.push({mesh:hoop,kind:"hoop",phase:i});
+  worldMesh(new THREE.SphereGeometry(.24,12,10),worldMats.lemon,[x,3.4+Math.random()*4,z+0.1],[1,1,1]);
+}
+// Floating checkerboard islands and toy-like buildings.
+for(let i=0;i<11;i++){
+  const a=i*2.399,dist=11+Math.random()*15,x=Math.cos(a)*dist,z=Math.sin(a)*dist,y=1.2+Math.random()*3.8;
+  const island=worldMesh(new THREE.CylinderGeometry(1.3+Math.random()*1.5,1.05,0.48,6),
+    [worldMats.lilac,worldMats.cyan,worldMats.pink,worldMats.mint][i%4],
+    [x,y,z],[1,1,1],[0,Math.random()*Math.PI,0]);
+  worldAnim.push({mesh:island,kind:"island",phase:i});
+  for(let j=0;j<3;j++){
+    const h=.7+Math.random()*1.7,xx=x+(Math.random()-.5)*1.5,zz=z+(Math.random()-.5)*1.5;
+    worldMesh(new THREE.BoxGeometry(.48,h,.48),[worldMats.coral,worldMats.lemon,worldMats.cyan,worldMats.pink][(i+j)%4],[xx,y+.24+h/2,zz],[1,1,1],[0,Math.random()*.3,0]);
+    worldMesh(new THREE.ConeGeometry(.38,.65,5),[worldMats.pink,worldMats.cyan,worldMats.lemon][(i+j)%3],[xx,y+h+.55,zz],[1,1,1],[0,Math.PI/5,0]);
+  }
+}
+// Big striped tent in the distance, with candy-coloured pennants.
+const tent=new THREE.Group();tent.position.set(-20,0,-17);scene.add(tent);
+const tentBase=new THREE.Mesh(new THREE.CylinderGeometry(3.6,3.6,1.3,32),worldMats.pink);tentBase.position.y=.65;tent.add(tentBase);
+const tentRoof=new THREE.Mesh(new THREE.ConeGeometry(4.1,3.8,32),worldMats.lilac);tentRoof.position.y=3.1;tent.add(tentRoof);
+const tentTop=new THREE.Mesh(new THREE.SphereGeometry(.3,12,10),worldMats.lemon);tentTop.position.y=5.05;tent.add(tentTop);
+for(let i=0;i<12;i++){const a=i*Math.PI*2/12;worldMesh(new THREE.SphereGeometry(.13,10,8),i%2?worldMats.cyan:worldMats.lemon,[-20+Math.cos(a)*3.65,1.15,-17+Math.sin(a)*3.65],[1,1,1])}
+// Floating cloud puffs, with a slow, gentle drift.
+const clouds=[];
+for(let i=0;i<13;i++){
+  const g=new THREE.Group();const x=(Math.random()-.5)*68,z=(Math.random()-.5)*68,y=9+Math.random()*9;
+  for(let j=0;j<5;j++){const puff=new THREE.Mesh(new THREE.SphereGeometry(.65+Math.random()*.55,12,9),worldMats.cloud);puff.position.set((j-2)*.72,Math.random()*.3,Math.random()*.35);puff.scale.y=.65;g.add(puff)}
+  g.position.set(x,y,z);scene.add(g);clouds.push({mesh:g,phase:i});
+}
+// Oversized stars and candy-coloured diamonds suspended in the air.
+for(let i=0;i<38;i++){
+  const a=Math.random()*Math.PI*2,d=8+Math.random()*28,x=Math.cos(a)*d,y=2+Math.random()*12,z=Math.sin(a)*d;
+  const geo=i%2?new THREE.OctahedronGeometry(.25+Math.random()*.35):new THREE.DodecahedronGeometry(.22+Math.random()*.28);
+  const gem=worldMesh(geo,[worldMats.lemon,worldMats.cyan,worldMats.pink,worldMats.mint,worldMats.lilac][i%5],[x,y,z],[1,1,1],[Math.random(),Math.random(),Math.random()]);
+  worldAnim.push({mesh:gem,kind:"gem",phase:i});
+}
+// Soft, coloured lanterns along the outer edge of the carnival.
+for(let i=0;i<24;i++){
+  const a=i*Math.PI*2/24,r=8.8,x=Math.cos(a)*r,z=Math.sin(a)*r;
+  const orb=worldMesh(new THREE.SphereGeometry(.13,12,10),i%3===0?worldMats.pink:i%3===1?worldMats.cyan:worldMats.lemon,[x,1.1,z],[1,1,1]);
+  worldAnim.push({mesh:orb,kind:"lantern",phase:i});
+}
+
 const mats={red:new THREE.MeshStandardMaterial({color:0xe84155,roughness:.7}),blue:new THREE.MeshStandardMaterial({color:0x2455b7,roughness:.65}),white:new THREE.MeshStandardMaterial({color:0xfff4e5,roughness:.45}),black:new THREE.MeshStandardMaterial({color:0x100c1c,roughness:.4}),gold:new THREE.MeshStandardMaterial({color:0xffd45f,metalness:.45,roughness:.3}),skin:new THREE.MeshStandardMaterial({color:0xf2e6ff,roughness:.7})};
 const caine=new THREE.Group();scene.add(caine);caine.position.set(0,.38,0);
 function addMesh(parent,geo,mat,pos,scale){const m=new THREE.Mesh(geo,mat);m.position.set(...pos);if(scale)m.scale.set(...scale);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
